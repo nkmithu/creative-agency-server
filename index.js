@@ -23,6 +23,7 @@ const client = new MongoClient(uri, {
 });
 client.connect(err => {
     const services = client.db("creative-agency").collection("services");
+    const reviews = client.db("creative-agency").collection("reviews");
     // perform actions on the collection object
     console.log('db connected');
 
@@ -44,6 +45,22 @@ client.connect(err => {
 
     app.get('/services', (req, res) => {
         services.find({})
+            .toArray((err, documents) => {
+                res.send(documents);
+            })
+    });
+
+    app.post('/addReview', (req, res) => {
+        const newReview = req.body;
+        reviews.insertOne(newReview)
+            .then(result => {
+                res.send(result.insertedCount > 0)
+                console.log(result);
+            })
+    });
+    
+    app.get('/reviews', (req, res) => {
+        reviews.find({})
             .toArray((err, documents) => {
                 res.send(documents);
             })
