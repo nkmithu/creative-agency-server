@@ -2,6 +2,7 @@ const express = require('express')
 const app = express()
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const fs = require('fs-extra');
 require('dotenv').config();
 const fileUpload = require('express-fileupload');
 const MongoClient = require('mongodb').MongoClient;
@@ -33,16 +34,25 @@ client.connect(err => {
         const file = req.files.file;
         const title = req.body.title;
         const description = req.body.description;
-        console.log(title, description, file);
-        file.mv(`${__dirname}/services/${file.name}`, err=>{
-            if(err){
-                console.log(err);
-                return res.status(500).send({msg: 'Failed To Upload Image'})
-            }
-            return res.send({msg: "File Uploaded Successfully"})
-        })
+        const newImg = file.data;
+        const encImg = newImg.toString('base64');
 
-        services.insertOne({title, description, img:file.name})
+        console.log(title, description, file);
+
+        var image = {
+            contentType: req.files.file.mimetype,
+            size: req.files.file.size,
+            img: Buffer.from(encImg, 'base64')
+        }
+
+        services.insertOne({
+                title,
+                description,
+                image
+            })
+            .then(result => {
+                res.send(result.insertedCount > 0);
+            })
     });
 
     app.get('/services', (req, res) => {
@@ -60,7 +70,7 @@ client.connect(err => {
                 console.log(result);
             })
     });
-    
+
     app.get('/reviews', (req, res) => {
         reviews.find({})
             .toArray((err, documents) => {
@@ -79,12 +89,14 @@ client.connect(err => {
 
     app.get('/orders', (req, res) => {
         const loggedInEmail = req.query.email;
-        orders.find({email:loggedInEmail})
+        orders.find({
+                email: loggedInEmail
+            })
             .toArray((err, documents) => {
                 res.send(documents);
             })
     });
-    
+
     app.post('/addAdmin', (req, res) => {
         const newAdmin = req.body;
         admin.insertOne(newAdmin)
@@ -96,12 +108,14 @@ client.connect(err => {
 
     app.post('/isAdmin', (req, res) => {
         const email = req.body.email;
-        admin.find({ email: email })
+        admin.find({
+                email: email
+            })
             .toArray((err, admin) => {
                 res.send(admin.length > 0);
             })
     })
-    
+
 });
 
 
@@ -109,4 +123,4 @@ app.get('/', (req, res) => {
     res.send('Hello World!');
 })
 
-app.listen(port)
+app.listen(process.env.PORT || port)
