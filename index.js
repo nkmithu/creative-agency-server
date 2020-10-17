@@ -25,6 +25,7 @@ client.connect(err => {
     const services = client.db("creative-agency").collection("services");
     const reviews = client.db("creative-agency").collection("reviews");
     const orders = client.db("creative-agency").collection("orders");
+    const admin = client.db("creative-agency").collection("admin");
     // perform actions on the collection object
     console.log('db connected');
 
@@ -77,11 +78,30 @@ client.connect(err => {
     });
 
     app.get('/orders', (req, res) => {
-        orders.find({})
+        const loggedInEmail = req.query.email;
+        orders.find({email:loggedInEmail})
             .toArray((err, documents) => {
                 res.send(documents);
             })
     });
+    
+    app.post('/addAdmin', (req, res) => {
+        const newAdmin = req.body;
+        admin.insertOne(newAdmin)
+            .then(result => {
+                res.send(result.insertedCount > 0)
+                console.log(result);
+            })
+    });
+
+    app.post('/isAdmin', (req, res) => {
+        const email = req.body.email;
+        admin.find({ email: email })
+            .toArray((err, admin) => {
+                res.send(admin.length > 0);
+            })
+    })
+    
 });
 
 
