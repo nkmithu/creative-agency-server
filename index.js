@@ -24,6 +24,7 @@ const client = new MongoClient(uri, {
 client.connect(err => {
     const services = client.db("creative-agency").collection("services");
     const reviews = client.db("creative-agency").collection("reviews");
+    const orders = client.db("creative-agency").collection("orders");
     // perform actions on the collection object
     console.log('db connected');
 
@@ -61,6 +62,22 @@ client.connect(err => {
     
     app.get('/reviews', (req, res) => {
         reviews.find({})
+            .toArray((err, documents) => {
+                res.send(documents);
+            })
+    });
+
+    app.post('/addOrder', (req, res) => {
+        const newOrder = req.body;
+        orders.insertOne(newOrder)
+            .then(result => {
+                res.send(result.insertedCount > 0)
+                console.log(result);
+            })
+    });
+
+    app.get('/orders', (req, res) => {
+        orders.find({})
             .toArray((err, documents) => {
                 res.send(documents);
             })
